@@ -25,18 +25,18 @@ const createPost = async (req: Request, res: Response) => {
 
 // ----------------- GET ALL POST -----------------------
 
-const getallPost = async (req:Request , res:Response)=>{
-    try{ 
-        const {search}=req.query
-        const searchQuery = typeof  search === "string"?search:undefined
-        
-        const tags = req.query.tags ?(req.query.tags as string).split(",") :[]
+const getallPost = async (req: Request, res: Response) => {
+    try {
+        const { search } = req.query
+        const searchQuery = typeof search === "string" ? search : undefined
 
-        const result = await postServices.getallPost({search:searchQuery,tags})
+        const tags = req.query.tags ? (req.query.tags as string).split(",") : []
+        const isFeatured = req.query.isFeatured ? req.query.isFeatured === "true" : undefined
+        const result = await postServices.getallPost({ search: searchQuery, tags, isFeatured })
         res.status(200).json(result)
 
-    }catch(error){
-         res.status(400).json({
+    } catch (error) {
+        res.status(400).json({
             error: 'Post all get failed',
             details: e
         })

@@ -16,10 +16,11 @@ const createPost = async (data: Omit<Post, "id" | "createdAt" | "updatedAt" | "a
 
 // ------------------ GET ALL POSTS ------------------------
 
-const getallPost = async ({ search, tags }:
+const getallPost = async ({ search, tags, isFeatured }:
     {
         search: string | undefined,
-        tags: string[] | []
+        tags: string[] | [],
+        isFeatured: boolean |undefined
 
     }) => {
 
@@ -55,6 +56,11 @@ const getallPost = async ({ search, tags }:
             tags: {
                 hasEvery: tags as string[]
             }
+        })
+    }
+    if (typeof isFeatured === 'boolean') {
+        andCondition.push({
+            isFeatured
         })
     }
 
