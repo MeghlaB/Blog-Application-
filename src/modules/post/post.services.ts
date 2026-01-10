@@ -1,3 +1,4 @@
+import { any } from "better-auth/*";
 import { Post } from "../../../generated/prisma/client";
 import { PostWhereInput } from "../../../generated/prisma/models";
 import { prisma } from "../../lib/prisma";
@@ -16,13 +17,26 @@ const createPost = async (data: Omit<Post, "id" | "createdAt" | "updatedAt" | "a
 
 // ------------------ GET ALL POSTS ------------------------
 
-const getallPost = async ({ search, tags, isFeatured,page,limit }:
+const getallPost = async ({
+    search,
+    tags,
+    isFeatured,
+    page,
+    limit,
+    skip,
+    sortBy,
+    sortOder
+
+}:
     {
         search: string | undefined,
         tags: string[] | [],
-        isFeatured: boolean |undefined,
-        page:number,
-        limit:number
+        isFeatured: boolean | undefined,
+        page: number,
+        limit: number,
+        skip: number,
+        sortBy: string,
+        sortOder: string
 
     }) => {
 
@@ -67,13 +81,55 @@ const getallPost = async ({ search, tags, isFeatured,page,limit }:
     }
 
     const allPost = await prisma.post.findMany({
+        take: limit,
+        skip,
+        where: {
+            AND: andCondition
+        },
+        orderBy: {
+            [sortBy]: sortOder
+        }
+
+    })
+    const total = await prisma.post.count({
         where: {
             AND: andCondition
         }
     })
-    return allPost
+    return {
+        data: allPost,
+        pagination: {
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit)
+        }
+    }
 }
 
+
+// ------------------- GET POST BY ID --------------------
+const getPostByID = async (postId: string) => {
+    const result = await prisma.$transaction(async (tx) => {
+        await tx.post.update({
+            where: {
+                id: postId
+            },
+            data: {
+                views: {
+                    increment: 1
+                }
+            }
+        })
+      const postData =  await tx.post.findUnique({
+            where: {
+                id: postId
+            }
+        })
+        return postData
+    })
+    return result
+}
 
 
 
@@ -81,5 +137,6 @@ const getallPost = async ({ search, tags, isFeatured,page,limit }:
 
 export const postServices = {
     createPost,
-    getallPost
+    getallPost,
+    getPostByID
 }
