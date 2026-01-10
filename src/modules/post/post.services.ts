@@ -16,11 +16,13 @@ const createPost = async (data: Omit<Post, "id" | "createdAt" | "updatedAt" | "a
 
 // ------------------ GET ALL POSTS ------------------------
 
-const getallPost = async ({ search, tags, isFeatured }:
+const getallPost = async ({ search, tags, isFeatured,page,limit }:
     {
         search: string | undefined,
         tags: string[] | [],
-        isFeatured: boolean |undefined
+        isFeatured: boolean |undefined,
+        page:number,
+        limit:number
 
     }) => {
 
