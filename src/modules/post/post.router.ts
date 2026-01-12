@@ -9,6 +9,7 @@ router.get("/my-posts",auth(UserRole.USER,UserRole.ADMIN),postController.getMyPo
 router.get("/", postController.getallPost)
 router.get("/:postId",postController.getPostById)
 router.patch("/:postId",auth(UserRole.USER,UserRole.ADMIN),postController.updateMyPost)
+router.delete("/:postId",auth(UserRole.USER,UserRole.ADMIN),postController.deletePost)
 
 
 export const postRouter = router
