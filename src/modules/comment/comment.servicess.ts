@@ -74,8 +74,92 @@ const getCommentByAuthor = async (authorId: string) => {
 
     })
 }
+
+// ---------------- DELETE COMMENT  ---------------------------
+
+const deleteComment = async(commentId:string , authorId:string)=>{
+  const commentData = await prisma.comment.findFirst({
+    where:{
+        id:commentId,
+        authorId
+    },
+    select:{
+        id:true
+    }
+  })
+
+  if(!commentData){
+    throw new Error ("Your provided input is invalid!..")
+  }
+
+  return await prisma.comment.delete({
+    where:{
+        id:commentData.id
+    }
+  })
+
+}
+
+//  -------------------- UPDATE COMMENT __________
+const updateComment = async(authorId:string ,commentId:string , data:{content?:string,status?:CommentStatus})=>{
+
+  const commentData = await prisma.comment.findFirst({
+    where:{
+        id:commentId,
+        authorId
+    },
+    select:{
+        id:true
+    }
+  })
+
+  if(!commentData){
+    throw new Error ("Your provided input is invalid!..")
+  }
+
+return await prisma.comment.update({
+    where:{
+        id:commentId,
+        authorId
+    },
+    data
+})
+}
+
+// ---------------- MODARATE COMMENT---------------------
+const moderateComment=async(commentId:string,data:{status:CommentStatus})=>{
+ const commentData=   await prisma.comment.findUniqueOrThrow({
+        where:{
+            id:commentId
+        }
+        
+    })
+
+    if(commentData.status === data.status){
+        throw new Error (`Your provided status (${data.status}) is already up to date.`)
+    }
+
+
+
+  return await prisma.comment.update({
+    where:{
+        id:commentId
+    },
+    data
+  })
+}
+
+
+
+
+
+
+
 export const commentServices = {
     createComment,
     getCommentByID,
-    getCommentByAuthor
+    getCommentByAuthor,
+    deleteComment,
+    updateComment,
+    moderateComment
 }
