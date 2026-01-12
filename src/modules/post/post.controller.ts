@@ -33,15 +33,15 @@ const getallPost = async (req: Request, res: Response) => {
 
         const tags = req.query.tags ? (req.query.tags as string).split(",") : []
         const isFeatured = req.query.isFeatured ? req.query.isFeatured === "true" : undefined
-        
+
 
         //  pagination
-     
-         
-        const {page, limit,skip ,sortBy,sortOder} = paginationHelpers(req.query )
 
-    
-        const result = await postServices.getallPost({ search: searchQuery, tags, isFeatured, page, limit,skip ,sortBy,sortOder})
+
+        const { page, limit, skip, sortBy, sortOder } = paginationHelpers(req.query)
+
+
+        const result = await postServices.getallPost({ search: searchQuery, tags, isFeatured, page, limit, skip, sortBy, sortOder })
         res.status(200).json(result)
 
     } catch (error) {
@@ -54,24 +54,41 @@ const getallPost = async (req: Request, res: Response) => {
 
 // ------------------ GET BY ID ---------------
 
-const getPostByid = async(req:Request,res:Response)=>{
-    try{
-        const {postId}=req.params
-      if(!postId){
-        throw new Error("Post Id is Required!")
-      }
- const result = await postServices.getPostByID(postId)
-   res.status(200).json(result)
-    }catch(error){
+const getPostById = async (req: Request, res: Response) => {
+    try {
+        const { postId } = req.params
+        if (!postId) {
+            throw new Error("Post Id is Required!")
+        }
+        const result = await postServices.getPostByID(postId)
+        res.status(200).json(result)
+    } catch (error) {
         res.status(400).json({
             error: 'Post all get failed',
             details: e
-        }) 
+        })
     }
 }
 
 
-
+// ------------------- GET MY POST DATA --------------------
+const getMyPost = async (req: Request, res: Response) => {
+    try {
+        const user = req.user
+       
+        if(!user){
+            throw new Error("You are unauthorized")
+        }     
+        const result = await postServices.getMyPost(user?.id as string)
+     
+        res.status(200).json(result)
+    } catch (error) {
+        res.status(400).json({
+            error: 'MY POST INVALID',
+          
+        })
+    }
+}
 
 
 
@@ -82,5 +99,6 @@ const getPostByid = async(req:Request,res:Response)=>{
 export const postController = {
     createPost,
     getallPost,
-  getPostByid
+    getPostById,
+    getMyPost
 }

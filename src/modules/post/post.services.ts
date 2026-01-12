@@ -1,4 +1,4 @@
-import { any } from "better-auth/*";
+import { any, date } from "better-auth/*";
 import { CommentStatus, Post } from "../../../generated/prisma/client";
 import { PostWhereInput } from "../../../generated/prisma/models";
 import { prisma } from "../../lib/prisma";
@@ -166,11 +166,50 @@ const getPostByID = async (postId: string) => {
 }
 
 
+// ------------------- GET MY POST DATA --------------------
+const getMyPost = async(authorId:string)=>{
+     await prisma.user.findUniqueOrThrow({
+        where:{
+            id:authorId,
+            status:"ACTIVE"
+        },
+        select:{
+            id:true
+        }
 
+    })
+
+    const result = await prisma.post.findMany({
+        where:{
+            authorId:authorId
+        },
+        orderBy:{
+            createdAt:"desc"
+        },
+        include:{
+            _count:{
+                select:{
+                    comments:true
+                }
+            }
+        }
+    })
+    const total = await prisma.post.count({
+        where:{
+            authorId
+        }
+    })
+
+ return {
+    data:result,
+    total
+ }
+}
 
 
 export const postServices = {
     createPost,
     getallPost,
-    getPostByID
+    getPostByID,
+    getMyPost
 }
