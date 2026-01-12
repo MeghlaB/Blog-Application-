@@ -1,11 +1,11 @@
-import e, { Request, Response } from "express";
+import e, { NextFunction, Request, Response } from "express";
 import { postServices } from "./post.services";
 import paginationHelpers from "../../hlepers/paginationHelpers";
 import { UserRole } from "../../middleware/auth";
 
 
 // ---------------- CREATE POST ---------------------------
-const createPost = async (req: Request, res: Response) => {
+const createPost = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const user = req.user
         if (!user) {
@@ -17,10 +17,7 @@ const createPost = async (req: Request, res: Response) => {
         const result = await postServices.createPost(req.body, user.id as string)
         res.status(201).json(result)
     } catch (error) {
-        res.status(400).json({
-            error: 'Post creation failed',
-            details: e
-        })
+        next(error)
     }
 }
 
@@ -76,17 +73,17 @@ const getPostById = async (req: Request, res: Response) => {
 const getMyPost = async (req: Request, res: Response) => {
     try {
         const user = req.user
-       
-        if(!user){
+
+        if (!user) {
             throw new Error("You are unauthorized")
-        }     
+        }
         const result = await postServices.getMyPost(user?.id as string)
-     
+
         res.status(200).json(result)
     } catch (error) {
         res.status(400).json({
             error: 'MY POST INVALID',
-          
+
         })
     }
 }
@@ -94,68 +91,64 @@ const getMyPost = async (req: Request, res: Response) => {
 
 // -------------- UPDATE MY POST DATA ----------------
 
-const   updateMyPost = async (req: Request, res: Response) => {
+const updateMyPost = async (req: Request, res: Response,next:NextFunction) => {
     try {
         const user = req.user
-       
-        if(!user){
+
+        if (!user) {
             throw new Error("You are unauthorized")
-        }     
-        const {postId}=req.params
-       console.log(user)
+        }
+        const { postId } = req.params
+        console.log(user)
         const isAdmin = user.role === UserRole.ADMIN
-     
-        const result = await postServices.updateMyPost( postId as string , req.body , user?.id as string,isAdmin )
-     
+
+        const result = await postServices.updateMyPost(postId as string, req.body, user?.id as string, isAdmin)
+
         res.status(200).json(result)
     } catch (error) {
-         const errorMessage = (error instanceof Error) ? error.message : 'Update Post Failed'
-        res.status(400).json({
-            error: errorMessage,
-          
-        })
+        next(error)
     }
 }
 
 // -------------- DELETE POST DATA ----------------
 
-const   deletePost = async (req: Request, res: Response) => {
+const deletePost = async (req: Request, res: Response) => {
     try {
         const user = req.user
-       
-        if(!user){
+
+        if (!user) {
             throw new Error("You are unauthorized")
-        }     
-        const {postId}=req.params
-       console.log(user)
+        }
+        const { postId } = req.params
+        console.log(user)
         const isAdmin = user.role === UserRole.ADMIN
-     
-        const result = await postServices.deletePost( postId as string ,  user?.id as string,isAdmin )
-     
+
+        const result = await postServices.deletePost(postId as string, user?.id as string, isAdmin)
+
         res.status(200).json(result)
     } catch (error) {
-         const errorMessage = (error instanceof Error) ? error.message : 'Delete Post Failed'
+        const errorMessage = (error instanceof Error) ? error.message : 'Delete Post Failed'
         res.status(400).json({
             error: errorMessage,
-          
+
         })
     }
 }
 
 // ----------------- GET STATS -----------------------------
 
-const   getStats = async (req: Request, res: Response) => {
+const getStats = async (req: Request, res: Response) => {
     try {
-       
-     
-        const result = await postServices.getStats(  )
-     
+
+
+        const result = await postServices.getStats()
+
         res.status(200).json(result)
     } catch (error) {
-         const errorMessage = (error instanceof Error) ? error.message : 'Stats fetched Failed'
+        const errorMessage = (error instanceof Error) ? error.message : 'Stats fetched Failed'
         res.status(400).json({
             error: errorMessage,
-          
+
         })
     }
 }
@@ -166,6 +159,6 @@ export const postController = {
     getPostById,
     getMyPost,
     updateMyPost,
-      deletePost,
-      getStats
+    deletePost,
+    getStats
 }
