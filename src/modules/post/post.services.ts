@@ -2,6 +2,7 @@ import { any, date } from "better-auth/*";
 import { CommentStatus, Post } from "../../../generated/prisma/client";
 import { PostWhereInput } from "../../../generated/prisma/models";
 import { prisma } from "../../lib/prisma";
+import { truncate } from "node:fs";
 
 // -------------- CREATE POST ---------------------------
 const createPost = async (data: Omit<Post, "id" | "createdAt" | "updatedAt" | "authorId">, userId: string) => {
@@ -208,7 +209,7 @@ const getMyPost = async (authorId: string) => {
 
 
 // -------------- UPDATE MY POST DATA ----------------
-const updateMyPost = async (postId: string, data: Partial<Post>, authorId: string,isAdmin:boolean) => {
+const updateMyPost = async (postId: string, data: Partial<Post>, authorId: string, isAdmin: boolean) => {
     const postData = await prisma.post.findUniqueOrThrow({
         where: {
             id: postId
@@ -221,12 +222,12 @@ const updateMyPost = async (postId: string, data: Partial<Post>, authorId: strin
     if (!isAdmin && (postData.authorId !== authorId)) {
         throw new Error("You are not owner/creator of the post")
     }
-    if(!isAdmin){
+    if (!isAdmin) {
         delete data.isFeatured
     }
     const result = await prisma.post.update({
-        where:{
-            id:postData.id
+        where: {
+            id: postData.id
         },
         data
     })
@@ -235,8 +236,8 @@ const updateMyPost = async (postId: string, data: Partial<Post>, authorId: strin
 
 
 // ------------------- DELETE POST DATA----------------------------
-const deletePost = async(postId:string , authorId:string , isAdmin:boolean)=>{
-const postData = await prisma.post.findUniqueOrThrow({
+const deletePost = async (postId: string, authorId: string, isAdmin: boolean) => {
+    const postData = await prisma.post.findUniqueOrThrow({
         where: {
             id: postId
         },
@@ -249,12 +250,59 @@ const postData = await prisma.post.findUniqueOrThrow({
         throw new Error("You are not owner/creator of the post")
     }
     return await prisma.post.delete({
-        where:{
-            id:postData.id
+        where: {
+            id: postData.id
         }
     })
 }
 
+
+// ----------------- GET STATS -----------------------------
+const getStats = async () => {
+    // PostsCount , postPublished , postDraft , postArchived , totalComments ,  approvedComments,rejectComments
+    return await prisma.$transaction(async (tnx) => {
+        const [totalPost, postPublished, postDraft, postArchived, totalComments, approvedComments, rejectComments, totalUsers, adminCount, userCount,totalViews,avgViews] =
+            await Promise.all([
+                await tnx.post.count(),
+                await tnx.post.count({ where: { status: 'PUBLISHED' } }),
+                await tnx.post.count({ where: { status: "DRAFT" } }),
+                await tnx.post.count({ where: { status: "ARCHIVED" } }),
+                await tnx.comment.count(),
+                await tnx.comment.count({ where: { status: "APPROVED" } }),
+                await tnx.comment.count({ where: { status: "REJECTED" } }),
+                await tnx.user.count(),
+                await tnx.user.count({ where: { role: "ADMIN" } }),
+                await tnx.user.count({ where: { role: "USER" } }),
+                await tnx.post.aggregate({
+                    _sum:{
+                        views:true
+                    }
+                }),
+                await tnx.post.aggregate({
+                    _avg:{
+                        views:true
+                    }
+                })
+            ])
+
+
+        return {
+            totalPost,
+            postPublished,
+            postArchived,
+            postDraft,
+            totalComments,
+            approvedComments,
+            rejectComments,
+            totalUsers,
+            adminCount,
+            userCount,
+            totalViews:totalViews._sum.views,
+            avgViews:avgViews._avg.views
+        }
+    })
+
+}
 
 
 
@@ -267,5 +315,6 @@ export const postServices = {
     getPostByID,
     getMyPost,
     updateMyPost,
-    deletePost
+    deletePost,
+    getStats
 }
