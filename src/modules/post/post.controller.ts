@@ -1,6 +1,7 @@
 import e, { Request, Response } from "express";
 import { postServices } from "./post.services";
 import paginationHelpers from "../../hlepers/paginationHelpers";
+import { UserRole } from "../../middleware/auth";
 
 
 // ---------------- CREATE POST ---------------------------
@@ -91,8 +92,30 @@ const getMyPost = async (req: Request, res: Response) => {
 }
 
 
+// -------------- UPDATE MY POST DATA ----------------
 
-
+const   updateMyPost = async (req: Request, res: Response) => {
+    try {
+        const user = req.user
+       
+        if(!user){
+            throw new Error("You are unauthorized")
+        }     
+        const {postId}=req.params
+       console.log(user)
+        const isAdmin = user.role === UserRole.ADMIN
+     
+        const result = await postServices.updateMyPost( postId as string , req.body , user?.id as string,isAdmin )
+     
+        res.status(200).json(result)
+    } catch (error) {
+         const errorMessage = (error instanceof Error) ? error.message : 'Update Post Failed'
+        res.status(400).json({
+            error: errorMessage,
+          
+        })
+    }
+}
 
 
 
@@ -100,5 +123,6 @@ export const postController = {
     createPost,
     getallPost,
     getPostById,
-    getMyPost
+    getMyPost,
+    updateMyPost
 }

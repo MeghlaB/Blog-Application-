@@ -89,10 +89,10 @@ const getallPost = async ({
         orderBy: {
             [sortBy]: sortOder
         },
-        include:{
-            _count :{
-            select:{comments:true}
-        }
+        include: {
+            _count: {
+                select: { comments: true }
+            }
         }
 
     })
@@ -136,11 +136,11 @@ const getPostByID = async (postId: string) => {
                         parentId: null,
                         status: CommentStatus.APPROVED
                     },
-                    orderBy:{createdAt:"desc"},
+                    orderBy: { createdAt: "desc" },
                     include: {
-                        
+
                         reply: {
-                            orderBy:{createdAt:"asc"},
+                            orderBy: { createdAt: "asc" },
                             where: {
                                 status: CommentStatus.APPROVED
                             },
@@ -155,8 +155,8 @@ const getPostByID = async (postId: string) => {
                         }
                     }
                 },
-                _count:{
-                    select:{comments:true}
+                _count: {
+                    select: { comments: true }
                 }
             }
         })
@@ -167,49 +167,76 @@ const getPostByID = async (postId: string) => {
 
 
 // ------------------- GET MY POST DATA --------------------
-const getMyPost = async(authorId:string)=>{
-     await prisma.user.findUniqueOrThrow({
-        where:{
-            id:authorId,
-            status:"ACTIVE"
+const getMyPost = async (authorId: string) => {
+    await prisma.user.findUniqueOrThrow({
+        where: {
+            id: authorId,
+            status: "ACTIVE"
         },
-        select:{
-            id:true
+        select: {
+            id: true
         }
 
     })
 
     const result = await prisma.post.findMany({
-        where:{
-            authorId:authorId
+        where: {
+            authorId: authorId
         },
-        orderBy:{
-            createdAt:"desc"
+        orderBy: {
+            createdAt: "desc"
         },
-        include:{
-            _count:{
-                select:{
-                    comments:true
+        include: {
+            _count: {
+                select: {
+                    comments: true
                 }
             }
         }
     })
     const total = await prisma.post.count({
-        where:{
+        where: {
             authorId
         }
     })
 
- return {
-    data:result,
-    total
- }
+    return {
+        data: result,
+        total
+    }
 }
 
+
+// -------------- UPDATE MY POST DATA ----------------
+const updateMyPost = async (postId: string, data: Partial<Post>, authorId: string,isAdmin:boolean) => {
+    const postData = await prisma.post.findUniqueOrThrow({
+        where: {
+            id: postId
+        },
+        select: {
+            id: true,
+            authorId: true
+        }
+    })
+    if (!isAdmin && (postData.authorId !== authorId)) {
+        throw new Error("You are not owner/creator of the post")
+    }
+    if(!isAdmin){
+        delete data.isFeatured
+    }
+    const result = await prisma.post.update({
+        where:{
+            id:postData.id
+        },
+        data
+    })
+    return result
+}
 
 export const postServices = {
     createPost,
     getallPost,
     getPostByID,
-    getMyPost
+    getMyPost,
+    updateMyPost
 }
